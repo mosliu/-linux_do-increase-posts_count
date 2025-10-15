@@ -107,7 +107,7 @@
         }, 8000);
     }
 
-    // 阅读帖子
+    // 阅读帖子（v3：进入帖子后只阅读 5-6 条回复，不进行点赞；随后跳至底部并把发现的话题追加到队列）
     function readPosts() {
         return new Promise((resolve, reject) => {
             // 如果没有回复列表就等加载完成
@@ -121,35 +121,36 @@
                     return;
                 }
 
-                log.info("没有回复列表, 5秒后重新获取");
-                setTimeout(() => {
-                    readPosts().then(resolve);
-                }, 5000);
+                log.info("没有回复列表, 跳过并进入下一个");
+                resolve();
                 return;
             }
 
-            // 获取第一个帖子并滚动一次
-            const firstPost = document.querySelector('.post-stream .topic-post');
+            // 帖子列表
+            const allPosts = document.querySelectorAll('.post-stream .topic-post');
+            if (!allPosts || allPosts.length === 0) {
+                log.info("没有找到帖子, 3秒后重试");
+                setTimeout(() => readPosts().then(resolve), 3000);
+                return;
+            }
+
+            // 滚动到第一个帖子
+            const firstPost = allPosts[0];
             if (firstPost) {
                 log.info("滚动到第一个帖子");
                 firstPost.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
 
-            // 等待2秒后进行第一次向下滚动
-            setTimeout(() => {
-                log.info("第一次向下滚动");
-                window.scrollBy({ top: 500, behavior: 'smooth' });
+            // 随机读取 5-6 条
+            const readCount = 5 + Math.floor(Math.random() * 2); // 5 或 6
+            log.info("预计阅读 %s 条帖子", readCount);
 
-                // 等待2秒后进行第二次向下滚动
-                setTimeout(() => {
-                    log.info("第二次向下滚动");
-                    window.scrollBy({ top: 500, behavior: 'smooth' });
-
-                    // 等待3秒后跳到页面底部
+            let idx = 0;
+            function readNext() {
+                if (idx >= Math.min(readCount, allPosts.length)) {
+                    // 读完规定数量后，跳到底部并收集新话题（参考 v2）
                     setTimeout(() => {
                         log.info("跳转到页面底部");
-
-                        // 创建一个 End 键的事件
                         const event = new KeyboardEvent('keydown', {
                             key: 'End',
                             keyCode: 35,
@@ -158,11 +159,9 @@
                             bubbles: true,
                             cancelable: true,
                         });
-
-                        // 触发该事件
                         document.dispatchEvent(event);
 
-                        // 等待5秒后检查是否有新的话题列表
+                        // 等待3秒后检查是否有新的话题列表
                         setTimeout(() => {
                             const newTopicList = document.querySelectorAll('.topic-list-body tr.topic-list-item:not(.pinned) a.raw-topic-link');
 
@@ -182,9 +181,22 @@
 
                             resolve();
                         }, 3000);
-                    }, 3000);
-                }, 2000);
-            }, 2000);
+                    }, 1500);
+                    return;
+                }
+
+                const post = allPosts[idx];
+                if (post) {
+                    log.info("阅读帖子 %s/%s", (idx + 1), readCount);
+                    post.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                idx += 1;
+                setTimeout(readNext, 1500);
+            }
+
+            // 启动读取
+            setTimeout(readNext, 1500);
         });
     }
 
