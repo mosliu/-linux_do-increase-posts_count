@@ -1,0 +1,21 @@
+{
+  "name": "linux-do-auto-view",
+  "version": "1.0.0",
+  "description": "自动浏览 linux.do 论坛帖子的脚本",
+  "main": "linux-auto-view-playwright.js",
+  "scripts": {
+    "start": "node linux-auto-view-playwright.js",
+    "install-browser": "npx playwright install chromium",
+    "debug-cookies": "node debug-cookies.js"
+  },
+  "keywords": [
+    "linux.do",
+    "automation",
+    "playwright"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}

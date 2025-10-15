@@ -1,0 +1,13 @@
+# Node modules
+node_modules/
+
+# Cookies 文件（包含敏感信息）
+cookies.json
+cookies.txt
+
+# 日志文件
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
